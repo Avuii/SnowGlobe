@@ -29,7 +29,7 @@
     <script type="module">
 
         import * as THREE from 'three';
-        import { OrbitControls } from '/three/addons/controls/OrbitControls.js';
+        import { OrbitControls } from './three/addons/controls/OrbitControls.js';
 
         // Scena
         const scene = new THREE.Scene();
@@ -67,7 +67,7 @@
 
         const textureLoader = new THREE.TextureLoader();
 
-        const backgroundTexture = textureLoader.load('/textures/skybox.png');
+        const backgroundTexture = textureLoader.load('./textures/skybox.png');
 
 
         const backgroundRadius = 5000;
@@ -369,7 +369,7 @@
 
         snowGeometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
 
-        const snowTexture = textureLoader.load('/textures/snowflake1.png');
+        const snowTexture = textureLoader.load('./textures/snowflake1.png');
 
         const snowMaterial = new THREE.PointsMaterial({
             map: snowTexture,
