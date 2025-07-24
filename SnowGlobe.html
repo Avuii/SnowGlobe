@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snow globe</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+
+        import * as THREE from 'three';
+        import { OrbitControls } from '/three/addons/controls/OrbitControls.js';
+
+        // Scena
+        const scene = new THREE.Scene();
+
+        // Kamera
+        const camera = new THREE.PerspectiveCamera(100, window.innerWidth / window.innerHeight, 0.1, 10000);
+        camera.position.set(0, 100, -120);
+        camera.lookAt(0, 0, 0);
+
+        // Renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // SWIATLO
+        const lightup = new THREE.DirectionalLight(0xffffff, 2);
+        lightup.position.set(75, 0, 100).normalize();
+        scene.add(lightup);
+
+        const lightin = new THREE.DirectionalLight(0xffffff, 2);
+        lightin.position.set(99, 99, 99).normalize();
+        scene.add(lightin);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.5);
+        scene.add(ambientLight);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // OrbitControls 
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.1;
+        //////////////////////////////////////////////////////////////////////////////////////////
+        //TŁO
+
+        const textureLoader = new THREE.TextureLoader();
+
+        const backgroundTexture = textureLoader.load('/textures/skybox.png');
+
+
+        const backgroundRadius = 5000;
+        const backgroundGeometry = new THREE.SphereGeometry(backgroundRadius, 64, 64);
+
+
+        const backgroundMaterial = new THREE.MeshBasicMaterial({
+            map: backgroundTexture,
+            side: THREE.BackSide,
+            overdraw: 0.5
+        });
+
+        const background = new THREE.Mesh(backgroundGeometry, backgroundMaterial);
+
+        background.position.set(0, 0, 0);
+        scene.add(background);
+
+
+        // Mgła
+        scene.fog = new THREE.FogExp2(0xffffff, 0.0001);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //SZKLANA KULA       
+        const whiteMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+        const snowGlobeGeometry = new THREE.SphereGeometry(102, 64, 64);
+        const snowGlobeMaterial = new THREE.MeshStandardMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.1,
+            metalness: 0.1,
+            roughness: 0.001,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.0,
+            refractionRatio: 0.80,
+            side: THREE.DoubleSide,
+        });
+        const snowGlobe = new THREE.Mesh(snowGlobeGeometry, snowGlobeMaterial);
+        snowGlobe.position.set(0, 0, 0);
+        scene.add(snowGlobe);
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //PODSTAWA MAPY
+        const hemisphereGeometry = new THREE.SphereGeometry(100, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const hemisphere = new THREE.Mesh(hemisphereGeometry, whiteMaterial);
+        hemisphere.rotation.x = -Math.PI;
+        scene.add(hemisphere);
+
+
+        const circleGeometry = new THREE.CircleGeometry(100, 64);
+        const circle = new THREE.Mesh(circleGeometry, whiteMaterial);
+        circle.rotation.x = -Math.PI / 2;
+        circle.position.y = 0.01;
+        circle.receiveShadow = true;
+        scene.add(circle);
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////        
+        //DROGA,PASY I CHODNIKI
+        // Droga 
+        const roadMaterial = new THREE.MeshStandardMaterial({ color: 0x000000, side: THREE.DoubleSide });
+        const roadGeometry = new THREE.RingGeometry(78, 98, 64);
+        const road = new THREE.Mesh(roadGeometry, roadMaterial);
+        road.rotation.x = -Math.PI / 2;
+        road.position.y = 0.1;
+        road.receiveShadow = true;
+        scene.add(road);
+
+        // Pasy
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff });
+        const lineGeometry = new THREE.BufferGeometry();
+        const positions = [];
+        const segments = 32;
+
+        for (let i = 0; i < segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            const x1 = Math.cos(angle) * 88;
+            const z1 = Math.sin(angle) * 88;
+            const x2 = Math.cos(angle + 0.05) * 88;
+            const z2 = Math.sin(angle + 0.05) * 88;
+            positions.push(x1, 0.2, z1, x2, 0.2, z2);
+        }
+
+        lineGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        const roadLines = new THREE.LineSegments(lineGeometry, lineMaterial);
+        roadLines.rotation.x = -Math.PI;
+        roadLines.position.y = 0.3;
+        scene.add(roadLines);
+
+        // Chodnik wewnętrzny 
+        const innerSidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, side: THREE.DoubleSide });
+        const innerSidewalkGeometry = new THREE.RingGeometry(76, 78, 64);
+        const innerSidewalk = new THREE.Mesh(innerSidewalkGeometry, innerSidewalkMaterial);
+        innerSidewalk.rotation.x = -Math.PI / 2;
+        innerSidewalk.position.y = 0.15;
+        innerSidewalk.receiveShadow = true;
+        scene.add(innerSidewalk);
+
+        // Chodnik zewnętrzny 
+        const outerSidewalkMaterial = new THREE.MeshStandardMaterial({ color: 0x777777, side: THREE.DoubleSide });
+        const outerSidewalkGeometry = new THREE.RingGeometry(100, 98, 64);
+        const outerSidewalk = new THREE.Mesh(outerSidewalkGeometry, outerSidewalkMaterial);
+        outerSidewalk.rotation.x = -Math.PI / 2;
+        outerSidewalk.position.y = 0.15;
+        outerSidewalk.receiveShadow = true;
+        scene.add(outerSidewalk);
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //DEKORACJE 
+        function createChristmasWreath() {
+            const wreathGroup = new THREE.Group();
+
+            // Wieniec
+            const wreathGeometry = new THREE.TorusGeometry(1.5, 0.7, 16, 32);
+            const wreathMaterial = new THREE.MeshStandardMaterial({ color: 0x006400 });
+            const wreath = new THREE.Mesh(wreathGeometry, wreathMaterial);
+            wreathGroup.add(wreath);
+
+            wreath.castShadow = true;
+            const ballGeometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const ballMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const ballPositions = 8;
+
+            for (let i = 0; i < ballPositions; i++) {
+                const angle = (i / ballPositions) * Math.PI * 2;
+
+
+                const ballFront = new THREE.Mesh(ballGeometry, ballMaterial);
+                ballFront.position.set(
+                    Math.cos(angle) * 1.7,
+                    Math.sin(angle) * 1.7,
+                    0.4
+                );
+
+                const ballBack = new THREE.Mesh(ballGeometry, ballMaterial);
+                ballBack.position.set(
+                    Math.cos(angle) * 1.7,
+                    Math.sin(angle) * 1.7,
+                    -0.4
+                );
+
+                wreathGroup.add(ballFront);
+                wreathGroup.add(ballBack);
+            }
+
+            // KOKARDA
+            const bowGroup = new THREE.Group();
+
+            const bowMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+
+            // Lewa strona
+            const leftLoopGeometry = new THREE.TorusGeometry(0.5, 0.2, 16, 32);
+            const leftLoop = new THREE.Mesh(leftLoopGeometry, bowMaterial);
+            leftLoop.rotation.z = Math.PI / 2;
+            leftLoop.position.set(-0.6, 1.3, 1);
+
+            // Prawa strona
+            const rightLoopGeometry = new THREE.TorusGeometry(0.5, 0.2, 16, 32);
+            const rightLoop = new THREE.Mesh(rightLoopGeometry, bowMaterial);
+            rightLoop.rotation.z = -Math.PI / 2;
+            rightLoop.position.set(0.6, 1.3, 1);
+
+            // srodek kokardki
+            const knotGeometry = new THREE.SphereGeometry(0.4, 16, 16);
+            const knot = new THREE.Mesh(knotGeometry, bowMaterial);
+            knot.position.set(0, 1.1, 1);
+
+            //to na dole co opada od kokardki XD
+            const ribbonGeometry = new THREE.ConeGeometry(0.3, 2, 3);
+
+            const leftRibbon = new THREE.Mesh(ribbonGeometry, bowMaterial);
+            leftRibbon.rotation.y = -Math.PI;
+            leftRibbon.rotation.z = 0.4;
+            leftRibbon.position.set(-0.3, 0.2, 1);
+            leftRibbon.scale.set(1, 0.7, 1);
+
+            const rightRibbon = new THREE.Mesh(ribbonGeometry, bowMaterial);
+            rightRibbon.rotation.y = -Math.PI;
+            rightRibbon.rotation.z = -0.4;
+            rightRibbon.position.set(0.3, 0.2, 1);
+            rightRibbon.scale.set(1, 0.7, 1);
+
+
+            bowGroup.add(leftLoop);
+            bowGroup.add(rightLoop);
+            bowGroup.add(knot);
+            bowGroup.add(leftRibbon);
+            bowGroup.add(rightRibbon);
+
+
+            wreathGroup.add(bowGroup);
+
+            return wreathGroup;
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //LATARNIA
+        function createRetroStreetLamp() {
+
+            const lampGroup = new THREE.Group();
+
+            // podstawa
+            const baseGeometry = new THREE.ConeGeometry(1.8, 0.5, 6);
+            const baseMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const base = new THREE.Mesh(baseGeometry, baseMaterial);
+            base.position.y = 0.5;
+
+            // Słup
+            const poleGeometry = new THREE.CylinderGeometry(0.3, 0.3, 12, 32);
+            const poleMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+            pole.position.y = 6.3;
+
+            // klosz
+            const glassMaterial = new THREE.MeshPhongMaterial({ color: 0xcccccc, opacity: 0.5, transparent: true });
+            const glassGeometry = new THREE.CylinderGeometry(1.5, 1, 2, 6);
+            const glass = new THREE.Mesh(glassGeometry, glassMaterial);
+            glass.position.y = 13.9;
+
+            //daszek
+            const roofGeometry = new THREE.ConeGeometry(1.8, 1.3, 6);
+            const roofMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.y = 15.4;
+            //spod
+            const floorGeometry = new THREE.ConeGeometry(1, 0.6, 6);
+            const floorMaterial = new THREE.MeshPhongMaterial({ color: 0x333333 });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.position.y = 12.5;
+            floor.rotation.x = -Math.PI;
+
+            // światło
+            const light = new THREE.PointLight(0xffff00, 10, 20);
+            light.position.set(0, 14, 0);
+
+            // Dodanie wieńca
+            const wreath = createChristmasWreath();
+            wreath.rotation.y = Math.PI;
+            wreath.position.set(0, 8, 0.3);
+
+
+            lampGroup.add(base);
+            lampGroup.add(pole);
+            lampGroup.add(glass);
+            lampGroup.add(roof);
+            lampGroup.add(light);
+            lampGroup.add(floor);
+            lampGroup.add(wreath);
+            lampGroup.castShadow = true;
+            lampGroup.receiveShadow = true;
+            scene.add(lampGroup);
+
+            return lampGroup;
+        }
+
+
+        function createStreetLampsAroundRoad(count) {
+            const radius = 74;
+            for (let i = 0; i < count; i++) {
+
+                const angle = (i / count) * Math.PI * 2;
+
+                const lampGroup = createRetroStreetLamp();
+
+                lampGroup.position.set(
+                    Math.cos(angle) * radius,
+                    0,
+                    Math.sin(angle) * radius
+                );
+
+                lampGroup.lookAt(0, 0, 0);
+
+                scene.add(lampGroup);
+            }
+        }
+        createStreetLampsAroundRoad(7);
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // ŚNIEG
+        const snowAmount = 2000;
+        const sphereRadius = 100;
+
+        const snowGeometry = new THREE.BufferGeometry();
+        let positionsArray = new Float32Array(snowAmount * 3);
+
+        for (let i = 0; i < snowAmount; i++) {
+            let x, y, z;
+            do {
+
+                x = Math.random() * 200 - 100;
+                y = Math.random() * 200 - 100;
+                z = Math.random() * 200 - 100;
+
+            } while (x * x + y * y + z * z > sphereRadius * sphereRadius); //  czy miesci sie w kuli
+
+            positionsArray[i * 3] = x;
+            positionsArray[i * 3 + 1] = y;
+            positionsArray[i * 3 + 2] = z;
+        }
+
+        snowGeometry.setAttribute('position', new THREE.BufferAttribute(positionsArray, 3));
+
+        const snowTexture = textureLoader.load('/textures/snowflake1.png');
+
+        const snowMaterial = new THREE.PointsMaterial({
+            map: snowTexture,
+            size: 0.7,
+            opacity: 0.9,
+            transparent: true,
+        });
+
+        const snowParticles = new THREE.Points(snowGeometry, snowMaterial);
+        scene.add(snowParticles);
+
+        function animateSnowflakes() {
+            const positions = snowGeometry.attributes.position.array;
+
+            for (let i = 0; i < snowAmount; i++) {
+                const xIndex = i * 3;
+                const yIndex = i * 3 + 1;
+                const zIndex = i * 3 + 2;
+
+
+                positions[yIndex] -= 0.2; // Prędkość 
+
+                if (positions[yIndex] < 0.01) {
+                    let x, y, z;
+                    do {
+
+                        x = Math.random() * 200 - 100;
+                        y = Math.random() * 200 - 100;
+                        z = Math.random() * 200 - 100;
+
+                    } while (x * x + y * y + z * z > sphereRadius * sphereRadius);
+
+                    positions[xIndex] = x;
+                    positions[yIndex] = y;
+                    positions[zIndex] = z;
+                }
+            }
+            snowGeometry.attributes.position.needsUpdate = true;
+        }
+
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //OZDOBY NA CHOINKE
+        // bombki
+        function addBaubles(treeGroup, x, y, z, scale) {
+            const baubleMaterial = new THREE.MeshPhongMaterial({ color: 0xff0000 }); // Kolor bombek (czerwony)
+
+            function createBauble(radius, posX, posY, posZ) {
+                const bauble = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 16), baubleMaterial);
+                bauble.position.set(x + posX, y + posY, z + posZ); // Ustawienie bombki w odpowiednim miejscu
+                bauble.scale.set(scale, scale, scale); // Skalowanie bombek
+                treeGroup.add(bauble);
+                bauble.castShadow = true;
+            }
+
+            createBauble(0.1, 0.7, 2, -0.01);
+            createBauble(0.1, -1, 1, 0.02);
+            createBauble(0.1, 1.2, -0.7, -0.5);
+            createBauble(0.1, -1, -0.3, -0.59);
+            createBauble(0.1, 0.6, -1, -1);
+        }
+
+        //lancuch
+        function addChainInSpiral(treeGroup, x, y, z, scale) {
+            const chainMaterial = new THREE.MeshPhongMaterial({ color: 0x800000 });
+
+            const numLinks = 18;
+            const radius = 2;
+            const heightStep = 0.3;
+            const angleStep = Math.PI / 8;
+
+            const chainGroup = new THREE.Group();
+
+            function createLink(radius, posX, posY, posZ) {
+                const link = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 16), chainMaterial);
+                link.position.set(posX, posY, posZ);
+                link.scale.set(scale, scale, scale);
+                link.rotation.set(Math.PI / 2, 0, 0);
+                chainGroup.add(link);
+            }
+
+            //spirala
+            for (let i = 0; i < numLinks; i++) {
+                const angle = angleStep * i;
+                const currentRadius = radius - (i * 0.1);
+                const posY = y + (i * heightStep) - 2;
+                const posX = x + currentRadius * Math.cos(angle);
+                const posZ = z + currentRadius * Math.sin(angle);
+
+                createLink(0.05, posX, posY, posZ);
+            }
+            treeGroup.add(chainGroup);
+        }
+
+        //CHOINKA
+        function createTree(x, y, z) {
+            const treeGroup = new THREE.Group();
+
+            const treeMaterial = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+
+            const topCone = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 8), treeMaterial);
+            topCone.position.set(x, y + 2.5, z);
+            treeGroup.add(topCone);
+
+            const middleCone = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.3, 8), treeMaterial);
+            middleCone.position.set(x, y + 1.5, z);
+            treeGroup.add(middleCone);
+
+            const bottomCone = new THREE.Mesh(new THREE.ConeGeometry(2, 5, 8), treeMaterial);
+            bottomCone.position.set(x, y, z);
+            treeGroup.add(bottomCone);
+
+            // Pień
+            const trunkMaterial = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2, 8), trunkMaterial);
+            trunk.position.set(x, y - 2, z);
+            treeGroup.add(trunk);
+
+            addBaubles(treeGroup, x, y, z, 3);
+            addChainInSpiral(treeGroup, x, y, z, 3);
+
+            treeGroup.scale.set(3, 3, 3);
+            treeGroup.castShadow = true;
+            treeGroup.receiveShadow = true;
+            return treeGroup;
+        }
+
+        const tree1 = createTree(15, 3, 17);
+        scene.add(tree1);
+        const tree2 = createTree(-18, 3, -7);
+        scene.add(tree2);
+        const tree3 = createTree(1, 3, -15);
+        scene.add(tree3);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //BAŁWANEK
+        function createSnowman(position) {
+
+            const headRadius = 0.8;
+            const bodyRadius = 1.2;
+            const bottomRadius = 2;
+
+            const armLength = 1;
+            const armRadius = 0.1;
+
+            const buttonRadius = 0.1;
+            const eyeRadius = 0.1;
+
+            const whiteMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+
+            const armMaterial = new THREE.MeshStandardMaterial({
+                color: 0x8B4513,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+
+            const blackMaterial = new THREE.MeshStandardMaterial({
+                color: 0x000000,
+            });
+
+            // cialo balwanka
+            const head = new THREE.Mesh(new THREE.SphereGeometry(headRadius), whiteMaterial);
+            const body = new THREE.Mesh(new THREE.SphereGeometry(bodyRadius), whiteMaterial);
+            const bottom = new THREE.Mesh(new THREE.SphereGeometry(bottomRadius), whiteMaterial);
+
+            bottom.position.y = 2;
+            body.position.y = 4;
+            head.position.y = 5.5;
+
+            // rece
+            const armGeometry = new THREE.CylinderGeometry(armRadius, armRadius, armLength);
+            const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+            const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+
+            leftArm.rotation.z = Math.PI / 4;
+            rightArm.rotation.z = -Math.PI / 4;
+
+            leftArm.position.set(-1, 5, 0);
+            rightArm.position.set(1, 5, 0);
+
+            // oczy
+            const leftEye = new THREE.Mesh(new THREE.SphereGeometry(eyeRadius), blackMaterial);
+            const rightEye = new THREE.Mesh(new THREE.SphereGeometry(eyeRadius), blackMaterial);
+
+            leftEye.position.set(0.2, 6, 0.6);
+            rightEye.position.set(-0.2, 6, 0.6);
+
+            //guziki
+            const button1 = new THREE.Mesh(new THREE.SphereGeometry(buttonRadius), blackMaterial);
+            const button2 = new THREE.Mesh(new THREE.SphereGeometry(buttonRadius), blackMaterial);
+            const button3 = new THREE.Mesh(new THREE.SphereGeometry(buttonRadius), blackMaterial);
+
+            button1.position.set(0, 5, 0.8);
+            button2.position.set(0, 4.2, 1.3);
+            button3.position.set(0, 3, 1.8);
+
+            const noseMaterial = new THREE.MeshStandardMaterial({
+                color: 0xff8c00,
+                roughness: 0.6,
+                metalness: 0.2
+            });
+
+            // nos
+            const noseGeometry = new THREE.ConeGeometry(0.1, 0.5, 20);
+            const nose = new THREE.Mesh(noseGeometry, noseMaterial);
+
+            nose.position.set(0, 5.5, 1);
+            nose.rotation.x = Math.PI / 2;
+
+            const snowman = new THREE.Group();
+
+            snowman.add(head);
+            snowman.add(body);
+            snowman.add(bottom);
+            snowman.add(leftArm);
+            snowman.add(rightArm);
+            snowman.add(leftEye);
+            snowman.add(rightEye);
+            snowman.add(button1);
+            snowman.add(button2);
+            snowman.add(button3);
+            snowman.add(nose);
+
+            snowman.position.set(position.x, position.y, position.z);
+            snowman.castShadow = true;
+            snowman.receiveShadow = true;
+
+            scene.add(snowman);
+        }
+
+        createSnowman({ x: -45, y: -0.5, z: 40 });
+        createSnowman({ x: 41, y: -0.5, z: -57 });
+        createSnowman({ x: -20, y: -0.5, z: -44 });
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //PODSTAWA KULI SNIEZNEJ
+        const baseTopRadius = 80; // Promień u góry podstawy
+        const baseBottomRadius = 100; // Promień u dołu podstawy
+        const baseHeight = 35; // Wysokość podstawy
+        const baseSegments = 32; // Liczba segmentów dla wygładzenia
+
+        const baseGeometry = new THREE.CylinderGeometry(
+            baseTopRadius, // Promień górny
+            baseBottomRadius, // Promień dolny
+            baseHeight, // Wysokość
+            baseSegments // Liczba segmentów
+        );
+
+        const baseMaterial = new THREE.MeshStandardMaterial({
+            color: 0xcccccc,  // Srebrny kolor
+            metalness: 0.9,   // Wysoka metaliczność
+            roughness: 0.2,   // Niska szorstkość
+            envMapIntensity: 1.0  // Wzmocnienie intensywności odbicia światła
+        });
+
+        const baseSnowGlobe = new THREE.Mesh(baseGeometry, baseMaterial);
+
+        baseSnowGlobe.position.y = -70;
+        scene.add(baseSnowGlobe);
+
+
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //BUDYNKI
+        function createBuilding(width, height, depth, positionX, positionY, positionZ) {
+            const buildingGroup = new THREE.Group();
+
+            const buildingMaterial = new THREE.MeshStandardMaterial({ color: 0xB6B1BA, roughness: 3 });
+            const buildingGeometry = new THREE.BoxGeometry(width, height, depth);
+            const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
+            building.position.set(0, height / 2, 0);
+
+            buildingGroup.add(building);
+            buildingGroup.position.set(positionX, positionY, positionZ);
+            building.castShadow = true;
+            building.receiveShadow = true;
+            return buildingGroup;
+        }
+
+
+        function createWindows(width, height, rows, cols, wallWidth, wallHeight) {
+            const windowGroup = new THREE.Group();
+
+            const windowMaterial = new THREE.MeshStandardMaterial({
+                color: 0xCAD0FF,
+                transparent: true,
+                opacity: 0.8,
+                roughness: 0.1,
+                specularIntensity: 100,
+                metalness: 0.5,
+                side: THREE.DoubleSide,
+            });
+
+            const windowGeometry = new THREE.PlaneGeometry(width, height);
+
+            const xSpacing = (wallWidth - cols * width) / (cols + 1);
+            const ySpacing = (wallHeight - rows * height) / (rows + 1);
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    const window = new THREE.Mesh(windowGeometry, windowMaterial);
+
+
+                    const xPosition = -wallWidth / 2 + xSpacing * (col + 1) + width * col + width / 2;
+                    const yPosition = -wallHeight / 2 + ySpacing * (row + 1) + height * row + height / 2;
+
+                    window.position.set(xPosition, yPosition, 0); // Centered in Z
+                    windowGroup.add(window);
+                }
+            }
+
+            return windowGroup;
+        }
+
+
+
+
+        function createBuildingWithWindows(x, y, z) {
+
+            const building = createBuilding(20, 40, 20, 15, 0, 30);
+            building.position.set(x, y, z);
+            scene.add(building);
+
+            const wallWidth = 20;
+            const wallHeight = 40;
+            const windowWidth = 3;
+            const windowHeight = 4;
+            const rows = 5;
+            const cols = 4;
+
+            function createWallWindows(wallPosition, rotationY = 0) {
+                const windows = createWindows(windowWidth, windowHeight, rows, cols, wallWidth, wallHeight);
+                windows.position.set(wallPosition.x, wallPosition.y, wallPosition.z);
+                windows.rotation.y = rotationY;
+                building.add(windows);
+            }
+
+
+            createWallWindows({ x: 0, y: 20, z: 10.1 });
+            createWallWindows({ x: 0, y: 20, z: -10.1 });
+            createWallWindows({ x: -10.1, y: 20, z: 0 }, Math.PI / 2);
+            createWallWindows({ x: 10.1, y: 20, z: 0 }, -Math.PI / 2);
+        }
+
+
+        createBuildingWithWindows(-45, 0, 10);
+        createBuildingWithWindows(40, 0, 30);
+        createBuildingWithWindows(18, 0, -30);
+
+
+
+        // Animacja
+        function animate() {
+            requestAnimationFrame(animate);
+            animateSnowflakes();
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+
+</html>
