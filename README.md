@@ -29,11 +29,13 @@ The application renders a transparent sphere containing a snowy landscape and dy
 ## 🚀 How to run  
 1. Clone the repository:    
    ```bash  
-   git clone https://github.com/Avuii/SnowGlobe.git  
+   git clone https://github.com/Avuii/SnowGlobe.git
+     
 2. Open index.html in your browser, or use a simple HTTP server:  
    cd SnowGlobe   
-   python3 -m http.server 8000    
-3.Navigate in your browser to http://localhost:8000/.  
+   python3 -m http.server 8000
+   
+4. Navigate in your browser to http://localhost:8000/.  
 
 ---
 
